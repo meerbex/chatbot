@@ -1,56 +1,72 @@
+# Step 1: Import necessary libraries
+import os
+from dotenv import load_dotenv
 import streamlit as st
-from openai import OpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_community.vectorstores import FAISS
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 
-# Show title and description.
-st.title("💬 Chatbot")
-st.write(
-    "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-    "You can also learn how to build this app step by step by [following our tutorial](https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps)."
+# Step 2: Load environment variables
+load_dotenv()
+
+# Step 3: Define the prompt template for the RAG
+template = """ответ должен от с смайликом и от имени автора как коуч и ментор и в таком же стиле и тоне как в документе и притащи видео и ссылку на него. Ответьте на вопрос, опираясь только на следующий контекст:
+{context}
+
+Вопрос: {question}
+"""
+prompt = ChatPromptTemplate.from_template(template)
+openai_api_key = st.text_input("OpenAI API Key", type="password")
+
+# Step 4: Initialize the OpenAI GPT-4 model
+model = ChatOpenAI(
+    temperature=0, model_name="gpt-4", openai_api_key=openai_api_key
 )
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
+# Step 5: Setup the Streamlit interface
+st.title("ИИ помощник БТ!")
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+# Initialize session state for messages if it doesn't exist
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    # Create a session state variable to store the chat messages. This ensures that the
-    # messages persist across reruns.
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+uploaded_file = st.file_uploader("Выберите текстовый файл", type="txt")
 
-    # Display the existing chat messages via `st.chat_message`.
+if uploaded_file is not None:
+    if "vectorstore" not in st.session_state:
+        string_data = uploaded_file.getvalue().decode("utf-8")
+        splitted_data = string_data.split("\n\n")
+
+        # Step 6: Create and configure the vector store
+        embedding = OpenAIEmbeddings(openai_api_key=openai_api_key)
+        st.session_state.vectorstore = FAISS.from_texts(splitted_data, embedding=embedding)
+
+    # Display chat messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Create a chat input field to allow the user to enter a message. This will display
-    # automatically at the bottom of the page.
-    if prompt := st.chat_input("What is up?"):
-
-        # Store and display the current prompt.
-        st.session_state.messages.append({"role": "user", "content": prompt})
+    # Get user input
+    if question := st.chat_input("Введите ваш вопрос"):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": question})
         with st.chat_message("user"):
-            st.markdown(prompt)
+            st.markdown(question)
 
-        # Generate a response using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
+        # Get AI response
+        retriever = st.session_state.vectorstore.as_retriever()
+        chain = (
+            {"context": retriever, "question": RunnablePassthrough()}
+            | prompt
+            | model
+            | StrOutputParser()
         )
 
-        # Stream the response to the chat using `st.write_stream`, then store it in 
-        # session state.
         with st.chat_message("assistant"):
-            response = st.write_stream(stream)
+            response = chain.invoke(question)
+            st.markdown(response)
+
+        # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})

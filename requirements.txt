@@ -1,2 +1,4 @@
-streamlit
-openai
+streamlit==1.10.0
+python-dotenv==0.19.2
+langchain==0.1.0  # Assuming there's a pip-installable package
+faiss-cpu==1.7.1.post2
