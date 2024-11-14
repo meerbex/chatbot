@@ -1,3 +1,4 @@
 streamlit==1.10.0
 langchain==0.1.0  # Assuming there's a pip-installable package
 langchain-community
+altair>=4.0.0
