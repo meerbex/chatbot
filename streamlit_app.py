@@ -1,6 +1,5 @@
 # Step 1: Import necessary libraries
 import os
-from dotenv import load_dotenv
 import streamlit as st
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
@@ -9,7 +8,6 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 # Step 2: Load environment variables
-load_dotenv()
 
 # Step 3: Define the prompt template for the RAG
 template = """ответ должен от с смайликом и от имени автора как коуч и ментор и в таком же стиле и тоне как в документе и притащи видео и ссылку на него. Ответьте на вопрос, опираясь только на следующий контекст:
