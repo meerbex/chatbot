@@ -9,7 +9,7 @@ from langchain_core.runnables import RunnablePassthrough
 
 
 # Step 3: Define the prompt template for the RAG
-template = """ответ должен от с смайликом и от имени автора как коуч и ментор и в таком же стиле и тоне как в документе и притащи видео и ссылку на него. Ответьте на вопрос, опираясь только на следующий контекст:
+template = """Ты есть коуч и ментор и ответь таком же стиле и в тоне как в контексте и притащи видео и ссылку на него если есть. Ответьте на вопрос, опираясь только на следующий контекст:
 {context}
 
 Вопрос: {question}
@@ -26,7 +26,12 @@ st.title("ИИ помощник БТ!")
 
 # Initialize session state for messages if it doesn't exist
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [
+        {
+            "role": "assistant",
+            "content": "Привет! Я твой коуч и ментор. Как я могу помочь?"
+        }
+    ]
 
 
 uploaded_file = open("./test.txt", "r", encoding="utf-8")
