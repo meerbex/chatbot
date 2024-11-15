@@ -1,5 +1,6 @@
 # Step 1: Import necessary libraries
 import os
+from dotenv import load_dotenv
 import streamlit as st
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
@@ -8,6 +9,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 # Step 2: Load environment variables
+load_dotenv()
 
 # Step 3: Define the prompt template for the RAG
 template = """ответ должен от с смайликом и от имени автора как коуч и ментор и в таком же стиле и тоне как в документе и притащи видео и ссылку на него. Ответьте на вопрос, опираясь только на следующий контекст:
@@ -16,11 +18,10 @@ template = """ответ должен от с смайликом и от име�
 Вопрос: {question}
 """
 prompt = ChatPromptTemplate.from_template(template)
-openai_api_key = st.text_input("OpenAI API Key", type="password")
 
 # Step 4: Initialize the OpenAI GPT-4 model
 model = ChatOpenAI(
-    temperature=0, model_name="gpt-4", openai_api_key=openai_api_key
+    temperature=0, model_name="gpt-4", openai_api_key=os.environ["OPENAI_KEY"]
 )
 
 # Step 5: Setup the Streamlit interface
@@ -38,7 +39,7 @@ if uploaded_file is not None:
         splitted_data = string_data.split("\n\n")
 
         # Step 6: Create and configure the vector store
-        embedding = OpenAIEmbeddings(openai_api_key=openai_api_key)
+        embedding = OpenAIEmbeddings(openai_api_key=os.environ["OPENAI_KEY"])
         st.session_state.vectorstore = FAISS.from_texts(splitted_data, embedding=embedding)
 
     # Display chat messages
