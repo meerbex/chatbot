@@ -28,11 +28,12 @@ st.title("ИИ помощник БТ!")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-uploaded_file = st.file_uploader("Выберите текстовый файл", type="txt")
+
+uploaded_file = open("./test.txt", "r", encoding="utf-8")
+string_data = uploaded_file.read()
 
 if uploaded_file is not None:
     if "vectorstore" not in st.session_state:
-        string_data = uploaded_file.getvalue().decode("utf-8")
         splitted_data = string_data.split("\n\n")
 
         # Step 6: Create and configure the vector store
